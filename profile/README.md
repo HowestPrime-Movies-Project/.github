@@ -1,13 +1,14 @@
 # HowestPrime Movies Platform
 
-A full movie platform built as a small, event-driven software ecosystem. This workspace brings together a staff backoffice, a movie microservice, a ticketing microservice, and the deployment infrastructure needed to run and validate the system in both local and production-like environments.
+A full movie platform built as a small, event-driven software ecosystem. This workspace brings together a customer-facing web app, a staff backoffice, a movie microservice, a ticketing microservice, and the deployment infrastructure needed to run and validate the system in both local and production-like environments.
 
 The project is intentionally split into separate repositories and responsibilities instead of one monolithic app. That makes the platform easier to evolve, test, and deploy while keeping each domain focused and independent.
 
 ## Platform at a glance
 
-This workspace contains five related project areas:
+This workspace contains the core internal project areas, and the platform also includes a teacher-provided customer-facing web application that is part of the wider solution.
 
+- Teacher-provided client web app — the public-facing movie experience used by customers
 - [st-client-backoffice-Maurice-De-Kegel](st-client-backoffice-Maurice-De-Kegel) — the cinema admin application used by staff
 - [st-microservice-movies-Maurice-De-Kegel](st-microservice-movies-Maurice-De-Kegel) — the movie catalog and event-driven backend service
 - [st-microservice-ticketing-Maurice-De-Kegel](st-microservice-ticketing-Maurice-De-Kegel) — the ticketing, ordering, and booking domain
@@ -18,8 +19,11 @@ This workspace contains five related project areas:
 
 ```mermaid
 flowchart LR
+    Customer[Moviegoer] --> WEB[Teacher-provided Client Web App]
     Admin[Backoffice staff] --> BO[Backoffice App]
-    BO --> MOVIES[Movies Microservice]
+
+    WEB --> MOVIES[Movies Microservice]
+    BO --> MOVIES
     MOVIES --> PG[(PostgreSQL)]
     MOVIES --> MQ[Message Broker / RabbitMQ / CloudAMQP]
 
@@ -34,6 +38,7 @@ flowchart LR
     MOVIES --> PROD
     TICK --> PROD
     BO --> PROD
+    WEB --> PROD
 ```
 
 ## Why this project is structured this way
@@ -42,13 +47,27 @@ This platform is designed around a typical microservice approach:
 
 - The movie domain owns movie-related data and business rules.
 - The ticketing domain owns bookings, suggestions, orders, and payment-related workflows.
+- The teacher-provided client web app gives customers the public movie experience.
 - The backoffice is a privileged admin interface used to manage catalog content and screening plans.
 - Infrastructure is separated so the system can be deployed, scaled, and monitored consistently across environments.
 - Messaging connects the services without tight coupling, allowing them to react to each other’s events.
 
 ## Project roles
 
-### 1. Backoffice application
+### 1. Customer-facing web app
+
+This is the front-end experience provided by the teachers for end users. It is the website customers interact with to browse movies and consume the platform’s public-facing experience.
+
+Main responsibilities:
+
+- Present movie listings and details to end users
+- Serve as the public-facing user interface
+- Call backend APIs for movie and ticketing data
+- Reflect the brand and customer experience of the platform
+
+This app is the user-facing layer of the system, while the internal backoffice and backend services support the operational and business logic behind it.
+
+### 2. Backoffice application
 
 Repository: [st-client-backoffice-Maurice-De-Kegel](st-client-backoffice-Maurice-De-Kegel)
 
@@ -64,7 +83,7 @@ Main responsibilities:
 
 This application is the operational control center for the movie side of the platform. It is not the end-user app; it is the internal tool used by operators and administrators.
 
-### 2. Movie microservice
+### 3. Movie microservice
 
 Repository: [st-microservice-movies-Maurice-De-Kegel](st-microservice-movies-Maurice-De-Kegel)
 
@@ -80,7 +99,7 @@ Main responsibilities:
 
 The movie service is the source of truth for movie metadata in the platform. It acts as the data and event producer for the rest of the system.
 
-### 3. Ticketing microservice
+### 4. Ticketing microservice
 
 Repository: [st-microservice-ticketing-Maurice-De-Kegel](st-microservice-ticketing-Maurice-De-Kegel)
 
@@ -97,7 +116,7 @@ Main responsibilities:
 
 This service listens to events from other parts of the platform and reacts to them asynchronously. In other words, it turns core platform events into booking and business workflows.
 
-### 4. Local integration test infrastructure
+### 5. Local integration test infrastructure
 
 Repository: [st-infrastructure-test-Maurice-De-Kegel](st-infrastructure-test-Maurice-De-Kegel)
 
@@ -113,7 +132,7 @@ Main responsibilities:
 
 This repository is the “system test” layer for the project. It helps validate that all services actually work together, not just in isolation.
 
-### 5. Production infrastructure
+### 6. Production infrastructure
 
 Repository: [st-infrastructure-prod-Maurice-De-Kegel](st-infrastructure-prod-Maurice-De-Kegel)
 
@@ -134,16 +153,18 @@ This repo is the operational backbone of the project. It ensures the application
 
 The platform works as a connected ecosystem:
 
-1. Staff use the backoffice to create or update movie data.
-2. The backoffice calls the Movies API, which stores the movie catalog and validates data.
-3. The Movies service publishes events when movies are created, updated, or changed.
-4. The Ticketing service listens for those events and keeps its own domain data in sync.
-5. The ticketing domain then manages suggestions, orders, and payment-driven transitions.
-6. The local test infrastructure validates that the services run together with Docker and messaging.
-7. The production infrastructure provisions the cloud resources and deployment pipeline for all services and apps.
+1. Customers use the teacher-provided client web app to browse the movie experience.
+2. Staff use the backoffice to create or update movie data.
+3. The backoffice calls the Movies API, which stores the movie catalog and validates data.
+4. The Movies service publishes events when movies are created, updated, or changed.
+5. The Ticketing service listens for those events and keeps its own domain data in sync.
+6. The ticketing domain then manages suggestions, orders, and payment-driven transitions.
+7. The local test infrastructure validates that the services run together with Docker and messaging.
+8. The production infrastructure provisions the cloud resources and deployment pipeline for all services and apps.
 
 This creates a clean separation of concerns:
 
+- Customer-facing browsing and presentation happen in the public client web app.
 - Catalog and movie data live in the movie service.
 - Booking logic and ticketing workflows live in the ticketing service.
 - Operators use the backoffice for management.
@@ -154,6 +175,7 @@ This creates a clean separation of concerns:
 
 A typical end-to-end flow in the platform looks like this:
 
+- A customer browses the public client web app.
 - A movie is registered in the backoffice.
 - The movie service persists the movie record.
 - A message is published to the shared broker.
@@ -163,8 +185,9 @@ A typical end-to-end flow in the platform looks like this:
 
 ## Summary
 
-This is not just a single app; it is a complete digital cinema ecosystem. Each repository has a clear role, and together they form a platform that covers:
+This is not just a single app; it is a complete digital cinema ecosystem. Each repository and frontend has a clear role, and together they form a platform that covers:
 
+- customer-facing browsing and presentation
 - content management
 - movie catalog operations
 - ticketing and booking workflows
