@@ -1,202 +1,128 @@
-# HowestPrime Movies Platform
+<div align="center">
 
-A full movie platform built as a small, event-driven software ecosystem. This workspace brings together a customer-facing web app, a staff backoffice, a movie microservice, a ticketing microservice, and the deployment infrastructure needed to run and validate the system in both local and production-like environments.
+# 🎬 HowestPrime Movies Platform
 
-The project is intentionally split into separate repositories and responsibilities instead of one monolithic app. That makes the platform easier to evolve, test, and deploy while keeping each domain focused and independent.
+**An event-driven cinema platform built as a small ecosystem of microservices, apps and infrastructure.**
 
-## Platform at a glance
+![.NET](https://img.shields.io/badge/.NET-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![Blazor](https://img.shields.io/badge/Blazor-512BD4?style=for-the-badge&logo=blazor&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-844FBA?style=for-the-badge&logo=terraform&logoColor=white)
+![Azure](https://img.shields.io/badge/Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
 
-This workspace contains the core internal project areas, and the platform also includes a teacher-provided customer-facing web application that is part of the wider solution.
+</div>
 
-- Teacher-provided client web app — the public-facing movie experience used by customers
-- [st-client-backoffice-Maurice-De-Kegel](st-client-backoffice-Maurice-De-Kegel) — the cinema admin application used by staff
-- [st-microservice-movies-Maurice-De-Kegel](st-microservice-movies-Maurice-De-Kegel) — the movie catalog and event-driven backend service
-- [st-microservice-ticketing-Maurice-De-Kegel](st-microservice-ticketing-Maurice-De-Kegel) — the ticketing, ordering, and booking domain
-- [st-infrastructure-test-Maurice-De-Kegel](st-infrastructure-test-Maurice-De-Kegel) — local Docker-based integration environment for validation
-- [st-infrastructure-prod-Maurice-De-Kegel](st-infrastructure-prod-Maurice-De-Kegel) — production-grade Terraform setup for Azure and CI/CD
+> 🎓 Created for the **Build and Deploy** course in the **Applied Computer Science – Software Engineering** program at **Howest**.
 
-## High-level architecture
+## 📑 Table of Contents
+
+- [About](#-about)
+- [Repositories](#-repositories)
+- [Architecture](#-architecture)
+- [Components](#-components)
+- [How It Works](#-how-it-works)
+- [Design Principles](#-design-principles)
+- [Getting Started](#-getting-started)
+- [Author](#-author)
+
+## 📖 About
+
+HowestPrime is a complete digital cinema ecosystem: a customer web app, a staff backoffice, a movie service, a ticketing service, and the infrastructure to validate it locally and deploy it to Azure. Each part lives in its own repository with a clear responsibility.
+
+## 📦 Repositories
+
+| Repository | Description |
+|---|---|
+| 🌐 **Client web app** *(teacher-provided)* | Public site where customers browse movies and consume the ticketing APIs |
+| [🛠️ st-client-backoffice](st-client-backoffice-Maurice-De-Kegel) | Staff admin app (.NET, Blazor Server) |
+| [🎞️ st-microservice-movies](st-microservice-movies-Maurice-De-Kegel) | Movie catalog service and event producer |
+| [🎟️ st-microservice-ticketing](st-microservice-ticketing-Maurice-De-Kegel) | Suggestions, orders, customers and payments |
+| [🧪 st-infrastructure-test](st-infrastructure-test-Maurice-De-Kegel) | Docker Compose stack for local integration testing |
+| [☁️ st-infrastructure-prod](st-infrastructure-prod-Maurice-De-Kegel) | Terraform for Azure plus CI/CD |
+
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
-    Customer[Moviegoer] --> WEB[Teacher-provided Client Web App]
+    Customer[Moviegoer] --> WEB[Client Web App]
     Admin[Backoffice staff] --> BO[Backoffice App]
 
     WEB --> MOVIES[Movies Microservice]
     BO --> MOVIES
     MOVIES --> PG[(PostgreSQL)]
-    MOVIES --> MQ[Message Broker / RabbitMQ / CloudAMQP]
+    MOVIES --> MQ[Message Broker]
 
     MQ --> TICK[Ticketing Microservice]
     TICK --> MONGO[(MongoDB)]
 
-    BO --> CLIENT[Client-facing movie experience]
-
     PROD[Production Infrastructure] --> AZ[Azure Resources]
-    TEST[Test Infrastructure] --> DOCKER[Docker / Compose Stack]
-
-    MOVIES --> PROD
-    TICK --> PROD
-    BO --> PROD
-    WEB --> PROD
+    TEST[Test Infrastructure] --> DOCKER[Docker Compose Stack]
 ```
 
-## Why this project is structured this way
+## 🧩 Components
 
-This platform is designed around a typical microservice approach:
+### 🌐 Client web app
+Public front end for customers. Shows movie listings and details and calls the backend APIs for movie and ticketing data.
 
-- The movie domain owns movie-related data and business rules.
-- The ticketing domain owns bookings, suggestions, orders, and payment-related workflows.
-- The teacher-provided client web app gives customers the public movie experience.
-- The backoffice is a privileged admin interface used to manage catalog content and screening plans.
-- Infrastructure is separated so the system can be deployed, scaled, and monitored consistently across environments.
-- Messaging connects the services without tight coupling, allowing them to react to each other’s events.
+### 🛠️ Backoffice
+Internal admin tool for cinema staff.
+- Register and update movies
+- Browse movie metadata
+- Create screening schedules per room
+- View planning in a monthly calendar
 
-## Project roles
+### 🎞️ Movies service
+Source of truth for movie metadata.
+- REST API with CRUD, filtering, pagination and search-like queries
+- Swagger/OpenAPI documentation
+- PostgreSQL storage
+- Publishes domain events on every change
+- Container-friendly with externalized configuration
 
-### 1. Customer-facing web app
+### 🎟️ Ticketing service
+Owns the commercial flow around screenings.
+- Suggestions, orders and customer data
+- Payment success/failure transitions
+- MongoDB storage
+- Syncs movie data by consuming broker events
 
-This is the front-end experience provided by the teachers for end users. It is the website customers interact with to browse movies and consume the platform’s public-facing experience.
+### 🧪 Test infrastructure
+Docker Compose environment running PostgreSQL, MongoDB, LavinMQ and the APIs together, with exposed ports for quick testing. It validates that the services work together, not just in isolation.
 
-Main responsibilities:
+### ☁️ Production infrastructure
+Terraform setup for Azure: resource group, databases, messaging, Container Registry and hosting, managed identities with Key Vault access, and GitHub Actions to deploy all apps and services.
 
-- Present movie listings and details to end users
-- Serve as the public-facing user interface
-- Call backend APIs for movie and ticketing data
-- Reflect the brand and customer experience of the platform
+## 🔄 How It Works
 
-This app is the user-facing layer of the system, while the internal backoffice and backend services support the operational and business logic behind it.
+1. Customers browse movies in the client web app.
+2. Staff create or update movies in the backoffice.
+3. The Movies API validates and stores the data, then publishes an event to the broker.
+4. The Ticketing service consumes the event and updates its own data.
+5. Ticketing continues with suggestions, orders and payment states.
+6. The stack is validated locally with Docker, then deployed to Azure.
 
-### 2. Backoffice application
+## 🎯 Design Principles
 
-Repository: [st-client-backoffice-Maurice-De-Kegel](st-client-backoffice-Maurice-De-Kegel)
+- **Separation of concerns:** movies, ticketing, UI and infrastructure each have their own repository.
+- **Loose coupling:** services communicate asynchronously through messaging.
+- **Repeatable environments:** the same system runs locally via Docker and in the cloud via Terraform and CI/CD.
 
-This is the staff-facing admin app built with .NET and Blazor Server. It gives cinema staff a way to manage the content and planning side of the business.
+## 🚀 Getting Started
 
-Main responsibilities:
+To run the full system locally, use the [test infrastructure repository](st-infrastructure-test-Maurice-De-Kegel):
 
-- Register and update movies in the catalog
-- Browse movie metadata and details
-- Create or adjust screening schedules for rooms
-- View planning data in a month-based calendar view
-- Validate and interact with backend APIs through typed client models
+```bash
+git clone <repo-url>
+cd st-infrastructure-test-Maurice-De-Kegel
+docker compose up
+```
 
-This application is the operational control center for the movie side of the platform. It is not the end-user app; it is the internal tool used by operators and administrators.
+See each repository's README for service-specific setup.
 
-### 3. Movie microservice
+## 👤 Author
 
-Repository: [st-microservice-movies-Maurice-De-Kegel](st-microservice-movies-Maurice-De-Kegel)
-
-This is the main domain service responsible for movie data. It exposes a REST API for creating, updating, retrieving, and deleting movie information and provides the foundation for catalog management across the broader platform.
-
-Main responsibilities:
-
-- Manage the movie catalog
-- Support filtering, pagination, and search-like operations
-- Publish domain events when movies change
-- Expose Swagger/OpenAPI documentation for interaction and testing
-- Run in a container-friendly environment with externalized configuration
-
-The movie service is the source of truth for movie metadata in the platform. It acts as the data and event producer for the rest of the system.
-
-### 4. Ticketing microservice
-
-Repository: [st-microservice-ticketing-Maurice-De-Kegel](st-microservice-ticketing-Maurice-De-Kegel)
-
-This service handles the ticketing domain: suggestions, orders, customer activity, payment transitions, and any process tied to the commercial flow around a movie screening.
-
-Main responsibilities:
-
-- Suggestion management
-- Movie synchronization from upstream events
-- Order creation and lifecycle handling
-- Customer data collection for bookings
-- Payment success/failure workflow processing
-- Integration with MongoDB and a message broker
-
-This service listens to events from other parts of the platform and reacts to them asynchronously. In other words, it turns core platform events into booking and business workflows.
-
-### 5. Local integration test infrastructure
-
-Repository: [st-infrastructure-test-Maurice-De-Kegel](st-infrastructure-test-Maurice-De-Kegel)
-
-This is the local environment used to run the platform as a connected system during development and testing. It uses Docker Compose to bring up the supporting services in a realistic stack.
-
-Main responsibilities:
-
-- Start PostgreSQL for the movies service
-- Start MongoDB for the ticketing service
-- Start LavinMQ for asynchronous messaging
-- Run the relevant APIs together locally
-- Expose ports for quick API and UI testing
-
-This repository is the “system test” layer for the project. It helps validate that all services actually work together, not just in isolation.
-
-### 6. Production infrastructure
-
-Repository: [st-infrastructure-prod-Maurice-De-Kegel](st-infrastructure-prod-Maurice-De-Kegel)
-
-This is the Azure and Terraform layer that provisions the shared production platform and CI/CD foundation.
-
-Main responsibilities:
-
-- Create the Azure resource group and shared services
-- Provision databases and messaging infrastructure
-- Set up Azure Container Registry and hosting environments
-- Configure managed identities and Key Vault access
-- Connect GitHub Actions and deployment automation
-- Support the client and backoffice apps as well as the microservices
-
-This repo is the operational backbone of the project. It ensures the application components can be deployed in a consistent, repeatable cloud environment.
-
-## How everything ties together
-
-The platform works as a connected ecosystem:
-
-1. Customers use the teacher-provided client web app to browse the movie experience.
-2. Staff use the backoffice to create or update movie data.
-3. The backoffice calls the Movies API, which stores the movie catalog and validates data.
-4. The Movies service publishes events when movies are created, updated, or changed.
-5. The Ticketing service listens for those events and keeps its own domain data in sync.
-6. The ticketing domain then manages suggestions, orders, and payment-driven transitions.
-7. The local test infrastructure validates that the services run together with Docker and messaging.
-8. The production infrastructure provisions the cloud resources and deployment pipeline for all services and apps.
-
-This creates a clean separation of concerns:
-
-- Customer-facing browsing and presentation happen in the public client web app.
-- Catalog and movie data live in the movie service.
-- Booking logic and ticketing workflows live in the ticketing service.
-- Operators use the backoffice for management.
-- Cloud infrastructure supports deployment and runtime hosting.
-- Messaging keeps the services loosely connected and event-driven.
-
-## Typical product flow
-
-A typical end-to-end flow in the platform looks like this:
-
-- A customer browses the public client web app.
-- A movie is registered in the backoffice.
-- The movie service persists the movie record.
-- A message is published to the shared broker.
-- The ticketing service consumes the event and updates its ticketing context.
-- The business workflow continues with suggestions, orders, and payment states.
-- The platform can be validated locally with Docker and then deployed through Azure infrastructure.
-
-## Summary
-
-This is not just a single app; it is a complete digital cinema ecosystem. Each repository and frontend has a clear role, and together they form a platform that covers:
-
-- customer-facing browsing and presentation
-- content management
-- movie catalog operations
-- ticketing and booking workflows
-- event-driven communication
-- local validation
-- production deployment and automation
-
-The result is a modular, realistic system that reflects the way modern cloud-native applications are built and operated.
-
-## Repository purpose
-
-The workspace is a multi-repository project designed to demonstrate how modern software systems can be split into domain-centered services and infrastructure layers, while still integrating into a single, coherent product experience.
+**Maurice De Kegel**, Howest – Applied Computer Science, Software Engineering
