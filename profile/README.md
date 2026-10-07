@@ -127,7 +127,7 @@ cd howestprime-movies
 
 ## 📄 License
 
-This workspace is part of an educational project for the HowestPrime movie platform. No separate license file is provided at the root of the workspace.
+This workspace is part of an educational project for the HowestPrime movie platform. And Falls under the Apache 2.0 License
 
 ## 👤 Author
 
